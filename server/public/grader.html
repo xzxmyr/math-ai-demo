@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>判题模型直测台 · MathEngine AI</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+  header { border-bottom: 1px solid #1e293b; background: #020617cc; backdrop-filter: blur(8px); position: sticky; top: 0; z-index: 10; }
+  header .inner { max-width: 1180px; margin: 0 auto; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  header h1 { font-size: 17px; font-weight: 700; letter-spacing: .5px; }
+  header h1 span { background: linear-gradient(90deg,#818cf8,#22d3ee); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  header .nav { display: flex; gap: 8px; }
+  header .nav a { font-size: 12px; color: #94a3b8; text-decoration: none; border: 1px solid #334155; padding: 5px 12px; border-radius: 999px; }
+  header .nav a.active { color: #fff; background: #4f46e5; border-color: #4f46e5; }
+  main { max-width: 1180px; margin: 0 auto; padding: 24px; }
+  .flow { display: grid; grid-template-columns: 380px 1fr; gap: 24px; align-items: start; }
+  @media (max-width: 980px) { .flow { grid-template-columns: 1fr; } }
+  .card { background: #1e293b80; border: 1px solid #33415599; border-radius: 16px; padding: 20px; }
+  .card h3 { font-size: 13px; color: #94a3b8; margin-bottom: 12px; font-weight: 600; letter-spacing: .3px; }
+  .stepnum { display: inline-flex; width: 20px; height: 20px; border-radius: 50%; background: #4f46e5; color: #fff; font-size: 11px; align-items: center; justify-content: center; margin-right: 8px; }
+  .drop { border: 2px dashed #334155; border-radius: 10px; padding: 18px; text-align: center; cursor: pointer; font-size: 12px; color: #64748b; transition: all .2s; }
+  .drop:hover { border-color: #6366f1; color: #a5b4fc; }
+  .drop img { max-width: 100%; max-height: 200px; margin-top: 8px; border-radius: 8px; }
+  .btn { width: 100%; margin-top: 12px; padding: 11px; border: none; border-radius: 10px; background: linear-gradient(90deg,#4f46e5,#0891b2); color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity .2s; }
+  .btn:hover { opacity: .9; }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn.green { background: linear-gradient(90deg,#059669,#0d9488); }
+  .btn.ghost { background: #334155; }
+  .hint { font-size: 11px; color: #475569; margin-top: 8px; line-height: 1.6; }
+  .loading { text-align: center; padding: 26px 0; color: #94a3b8; font-size: 13px; display: none; }
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 3px solid #334155; border-top-color: #818cf8; border-radius: 50%; animation: spin .8s linear infinite; vertical-align: -3px; margin-right: 8px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error { color: #f87171; background: #f8717114; border: 1px solid #f8717144; padding: 12px; border-radius: 10px; font-size: 12px; white-space: pre-wrap; margin-top: 12px; display: none; }
+  .section { margin-bottom: 22px; }
+  .section > h4 { font-size: 13px; font-weight: 700; color: #c7d2fe; margin-bottom: 10px; }
+  .blocks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  @media (max-width: 760px) { .blocks { grid-template-columns: 1fr; } }
+  .block { background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 12px; }
+  .block .tag { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; display: inline-block; margin-bottom: 8px; }
+  .tag.q { color: #22d3ee; background: #22d3ee14; border: 1px solid #22d3ee44; }
+  .tag.d { color: #a78bfa; background: #a78bfa14; border: 1px solid #a78bfa44; }
+  .tag.s { color: #f472b6; background: #f472b614; border: 1px solid #f472b644; }
+  .block .bbox { font-size: 10px; color: #475569; font-family: ui-monospace, Menlo, monospace; margin-bottom: 6px; }
+  .block .txt { font-size: 11px; color: #cbd5e1; line-height: 1.6; }
+  .block .latex { font-size: 11px; color: #7dd3fc; font-family: ui-monospace, Menlo, monospace; background: #020617; border: 1px solid #1e293b; border-radius: 8px; padding: 8px; margin-top: 8px; white-space: pre-wrap; word-break: break-all; line-height: 1.7; }
+  pre.ml { background: #020617; border: 1px solid #1e293b; border-radius: 10px; padding: 12px; font-size: 11px; color: #a5b4fc; white-space: pre-wrap; word-break: break-all; line-height: 1.7; max-height: 260px; overflow: auto; }
+  .scorebar { display: flex; align-items: center; gap: 14px; background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+  .score-num { font-size: 30px; font-weight: 800; color: #e2e8f0; }
+  .score-badge { font-size: 11px; padding: 4px 10px; border-radius: 999px; border: 1px solid; }
+  .badge-good { color: #34d399; border-color: #34d39944; background: #34d39914; }
+  .badge-mid { color: #fbbf24; border-color: #fbbf2444; background: #fbbf2414; }
+  .badge-bad { color: #f87171; border-color: #f8717144; background: #f8717114; }
+  .std { background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 14px; font-size: 12px; color: #cbd5e1; line-height: 1.9; white-space: pre-wrap; }
+  .defect { background: #0f172a; border: 1px solid #3f1d1d; border-radius: 12px; padding: 12px; margin-top: 10px; }
+  .defect .head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+  .sev { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+  .sev.high { color: #fff; background: #dc2626; }
+  .sev.medium { color: #1f2937; background: #f59e0b; }
+  .sev.low { color: #e2e8f0; background: #64748b; }
+  .defect .pos { font-size: 11px; color: #94a3b8; font-family: ui-monospace, Menlo, monospace; }
+  .defect .issue { font-size: 12px; color: #fca5a5; line-height: 1.7; }
+  .defect .fix { font-size: 12px; color: #6ee7b7; margin-top: 6px; line-height: 1.7; }
+  .strength { font-size: 12px; color: #86efac; background: #052e16; border: 1px solid #14532d; border-radius: 10px; padding: 10px 12px; margin-top: 8px; }
+  .suggest { background: #312e81; border: 1px solid #4338ca; border-radius: 12px; padding: 14px; margin-top: 12px; font-size: 12px; color: #c7d2fe; line-height: 1.8; }
+  .empty { font-size: 12px; color: #64748b; padding: 10px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="inner">
+    <h1>🧮 <span>判题模型直测台</span> · MathEngine AI</h1>
+    <div class="nav">
+      <a href="/">解题直测</a>
+      <a href="/grader" class="active">判题直测</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="flow">
+    <!-- 左侧: 上传与操作 -->
+    <div class="card">
+      <h3>① 上传作业照片</h3>
+      <div class="drop" id="drop">
+        点击上传 或 拖拽作业照片<br/>
+        <span style="font-size:11px;color:#475569">包含 题目 + 图形 + 学生解答 的照片</span>
+        <img id="preview" style="display:none" alt="预览"/>
+        <input type="file" id="file" accept="image/*" hidden />
+      </div>
+      <button class="btn" id="segmentBtn">② 分块读取（题目 / 图像 / 解答）</button>
+      <button class="btn green" id="gradeBtn" disabled>③ 判题（正确解答 + 缺陷）</button>
+      <div class="hint">
+        流程：图片 → 分块切分(题目/图像/解答) → 每块转 LaTeX 机器语言 → 解题模型生成正确解答 → 对比找出学生解答缺陷。<br/>
+        接口：POST /api/v1/grade/segment → POST /api/v1/grade/compare
+      </div>
+      <div class="error" id="error"></div>
+      <div class="loading" id="loading"><span class="spinner"></span><span id="loadingText">处理中…</span></div>
+    </div>
+
+    <!-- 右侧: 结果 -->
+    <div class="card">
+      <h3>判题结果</h3>
+
+      <div class="section" id="segSection" style="display:none">
+        <h4>分块读取结果（机器语言：LaTeX）</h4>
+        <div class="blocks">
+          <div class="block"><span class="tag q">① 题目</span><div class="bbox" id="qBbox"></div><div class="txt" id="qText"></div><div class="latex" id="qLatex"></div></div>
+          <div class="block"><span class="tag d">② 图像</span><div class="bbox" id="dBbox"></div><div class="txt" id="dText"></div><div class="latex" id="dLatex"></div></div>
+          <div class="block"><span class="tag s">③ 解答</span><div class="bbox" id="sBbox"></div><div class="txt" id="sText"></div><div class="latex" id="sLatex"></div></div>
+        </div>
+      </div>
+
+      <div class="section" id="gradeSection" style="display:none">
+        <h4>判题结论</h4>
+        <div class="scorebar">
+          <div class="score-num" id="score"></div>
+          <div>
+            <div><span class="score-badge" id="statusBadge"></span></div>
+            <div style="font-size:11px;color:#64748b;margin-top:4px">正确解答 vs 学生解答 缺陷分析</div>
+          </div>
+        </div>
+
+        <h4 style="color:#34d399">正确解答（解题模型生成）</h4>
+        <div class="std" id="std"></div>
+
+        <h4 style="color:#fca5a5;margin-top:16px">学生解答的缺陷</h4>
+        <div id="defects"></div>
+
+        <h4 style="color:#86efac;margin-top:16px">做得好的地方</h4>
+        <div id="strengths"></div>
+
+        <h4 style="color:#c7d2fe;margin-top:16px">综合建议</h4>
+        <div class="suggest" id="suggest"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let imageDataUrl = null;
+let seg = null;
+
+$('drop').addEventListener('click', () => $('file').click());
+$('drop').addEventListener('dragover', (e) => e.preventDefault());
+$('drop').addEventListener('drop', (e) => { e.preventDefault(); e.dataTransfer.files[0] && loadFile(e.dataTransfer.files[0]); });
+$('file').addEventListener('change', (e) => e.target.files[0] && loadFile(e.target.files[0]));
+
+function loadFile(file) {
+  if (!/^image\//.test(file.type)) return alert('请上传图片文件');
+  const reader = new FileReader();
+  reader.onload = () => { imageDataUrl = reader.result; $('preview').src = imageDataUrl; $('preview').style.display = 'block'; };
+  reader.readAsDataURL(file);
+}
+
+function setLoading(show, text) {
+  $('loading').style.display = show ? 'block' : 'none';
+  if (text) $('loadingText').textContent = text;
+}
+function showError(msg) { $('error').textContent = '❌ ' + msg; $('error').style.display = 'block'; }
+function hideError() { $('error').style.display = 'none'; }
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+// ---- ② 分块读取 ----
+$('segmentBtn').addEventListener('click', async () => {
+  if (!imageDataUrl) return alert('请先上传作业照片');
+  hideError(); $('gradeSection').style.display = 'none'; $('segSection').style.display = 'none';
+  setLoading(true, '视觉模型分块读取中（题目/图像/解答 + LaTeX）…');
+  $('segmentBtn').disabled = $('gradeBtn').disabled = true;
+  try {
+    const fd = new FormData();
+    fd.append('file', dataUrlToBlob(imageDataUrl));
+    const res = await fetch('/api/v1/grade/segment', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || '分块读取失败');
+    seg = data;
+    renderSeg(data);
+    $('segSection').style.display = 'block';
+    $('gradeBtn').disabled = false;
+  } catch (e) { showError(e.message); }
+  finally { setLoading(false); $('segmentBtn').disabled = false; }
+});
+
+function renderSeg(d) {
+  const r = d.regions || {};
+  const setBlock = (idB, idT, idL, region, fallback) => {
+    $(idB).textContent = region?.bbox ? `bbox ${JSON.stringify(region.bbox)}` : '(未检测到)';
+    $(idT).textContent = region?.text || region?.description || fallback || '';
+    $(idL).textContent = region?.latex || '';
+  };
+  setBlock('qBbox','qText','qLatex', r.question);
+  setBlock('dBbox','dText','dLatex', r.diagram, '图片中未检测到图形区域');
+  setBlock('sBbox','sText','sLatex', r.solution);
+}
+
+// ---- ③ 判题 ----
+$('gradeBtn').addEventListener('click', async () => {
+  if (!seg) return alert('请先执行分块读取');
+  hideError();
+  setLoading(true, '判题模型中（生成正确解答 → 对比缺陷）…');
+  $('gradeBtn').disabled = true;
+  try {
+    const res = await fetch('/api/v1/grade/compare', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(seg),
+    });
+    const g = await res.json();
+    if (!res.ok) throw new Error(g.error || '判题失败');
+    renderGrade(g);
+    $('gradeSection').style.display = 'block';
+  } catch (e) { showError(e.message); }
+  finally { setLoading(false); $('gradeBtn').disabled = false; }
+});
+
+function renderGrade(g) {
+  $('score').textContent = g.score;
+  const badge = $('statusBadge');
+  const good = g.score >= 90;
+  badge.textContent = g.status === 'correct' ? '解答优秀' : g.status === 'incorrect' ? '解答有误' : '部分正确';
+  badge.className = 'score-badge ' + (good ? 'badge-good' : g.status === 'incorrect' ? 'badge-bad' : 'badge-mid');
+
+  $('std').textContent = g.correctSolution || g.modelStandardAnswer || '';
+
+  const defects = g.defects || [];
+  $('defects').innerHTML = defects.length
+    ? defects.map((d) => `
+      <div class="defect">
+        <div class="head">
+          <span class="sev ${d.severity}">${sevLabel(d.severity)}</span>
+          ${d.step ? `<span class="pos">位于: ${escapeHtml(d.step)}</span>` : ''}
+        </div>
+        <div class="issue">缺陷：${escapeHtml(d.issue)}</div>
+        ${d.fix ? `<div class="fix">修正：${escapeHtml(d.fix)}</div>` : ''}
+      </div>`).join('')
+    : '<div class="empty">未发现明显缺陷，解答完整正确 ✅</div>';
+
+  const strengths = g.strengths || [];
+  $('strengths').innerHTML = strengths.length
+    ? strengths.map((s) => `<div class="strength">✔ ${escapeHtml(s)}</div>`).join('')
+    : '<div class="empty">—</div>';
+
+  $('suggest').textContent = g.suggestions || '';
+}
+
+function sevLabel(v) {
+  return { high: '严重缺陷', medium: '一般缺陷', low: '轻微瑕疵' }[v] || v;
+}
+
+function dataUrlToBlob(dataUrl) {
+  const [meta, b64] = dataUrl.split(',');
+  const mime = (meta.match(/data:(.*?);/) || [])[1] || 'image/png';
+  const bin = atob(b64);
+  const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return new Blob([arr], { type: mime });
+}
+</script>
+</body>
+</html>

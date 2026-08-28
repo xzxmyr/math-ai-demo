@@ -1,0 +1,30 @@
+# Render 免费云后端蓝图 (Blueprints)
+# 用法: Render 控制台 → New → Blueprint → 选择本仓库 (或手动 New Web Service 指向 server/)
+# 免费版注意: 15 分钟无请求会休眠, 首次访问需等待约 1 分钟冷启动
+
+services:
+  - type: web
+    name: math-ai-grader-api
+    runtime: node
+    rootDir: server
+    buildCommand: npm install
+    startCommand: node index.js
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # 前端 GitHub Pages 域名 (必须填写, 逗号分隔可多个)
+      - key: ALLOWED_ORIGINS
+        sync: false
+      # 阿里云百炼密钥 (在 Render 控制台填写)
+      - key: DASHSCOPE_API_KEY
+        sync: false
+      # 可选: API Token 鉴权
+      # - key: API_TOKEN
+      #   sync: false
+      - key: MAX_UPLOAD_MB
+        value: "10"
+      - key: LLM_TIMEOUT_MS
+        value: "180000"

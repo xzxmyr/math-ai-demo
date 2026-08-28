@@ -1,0 +1,54 @@
+# 自动构建前端并部署到 GitHub Pages
+# 触发: push 到 main / 手动 workflow_dispatch
+# 前端 API 地址来自仓库 Secret: VITE_API_BASE_URL (指向 Render 后端, 如 https://xxx.onrender.com/api/v1)
+
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        env:
+          # GitHub Pages 子路径: /<仓库名>/
+          VITE_BASE_PATH: /${{ github.event.repository.name }}/
+          # 后端地址(仓库 Secret 中配置); 未配置时前端回退 Mock
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+        run: npm run build
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
