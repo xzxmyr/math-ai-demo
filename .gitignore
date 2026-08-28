@@ -9,6 +9,8 @@ dist/
 .env.*
 !.env.example
 !.env*.example
+# .env.production 只含公开后端地址(非密钥), 需随仓库提交供 GitHub Actions 构建
+!.env.production
 
 # 系统文件
 .DS_Store

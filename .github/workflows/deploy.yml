@@ -38,8 +38,7 @@ jobs:
         env:
           # GitHub Pages 子路径: /<仓库名>/
           VITE_BASE_PATH: /${{ github.event.repository.name }}/
-          # 后端地址(仓库 Secret 中配置); 未配置时前端回退 Mock
-          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+          # 后端地址: 由已提交的 .env.production 提供 (公开 URL, 无需 Secret)
         run: npm run build
 
       - name: Configure Pages
